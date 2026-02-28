@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+
+  checkins  Attendance[] @relation("CheckinBy")
+  checkouts Attendance[] @relation("CheckoutBy")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  ELECTION
+}
+
+model Member {
+  id              String         @id @default(cuid())
+  usccmpc_id      String         @unique
+  firstName       String
+  lastName        String
+  middleName      String?
+  suffix          String?
+  membership_type MembershipType
+  email1          String?
+  email2          String?
+  contactNumber   String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  voted           Boolean        @default(false)
+  voted_at        DateTime?
+
+  attendance Attendance[]
+
+  @@index([firstName])
+  @@index([lastName])
+  @@index([usccmpc_id])
+}
+
+enum MembershipType {
+  Regular
+  Associate
+}
+
+model Attendance {
+  id                   String           @id @default(cuid())
+  member_id            String
+  member               Member           @relation(fields: [member_id], references: [id])
+  queue_number         Int
+  checkin_at           DateTime         @default(now())
+  checkin_by_id        String
+  checkin_by           User             @relation("CheckinBy", fields: [checkin_by_id], references: [id])
+  checkout_at          DateTime?
+  checkout_by_id       String?
+  checkout_by          User?            @relation("CheckoutBy", fields: [checkout_by_id], references: [id])
+  checkout_number_given Int?
+  status               AttendanceStatus @default(Correct)
+
+  @@index([member_id])
+  @@unique([queue_number])   // enforced atomically by SQLite — no two rows share a queue number
+}
+
+enum AttendanceStatus {
+  Correct
+  Lost
+  Mismatch
+}
+
+model EventConfig {
+  id    Int    @id @default(autoincrement())
+  title String @default("USCC-MPC Event")
+}
