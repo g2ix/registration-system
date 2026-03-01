@@ -11,10 +11,11 @@ function createPrisma() {
     //   SQLite waits up to 10 s for the lock to release — essential under load.
     // synchronous NORMAL: safe durability level, much faster than FULL.
     client.$connect().then(() => {
-        return client.$queryRawUnsafe(`PRAGMA journal_mode=WAL;`)     // returns rows → queryRaw
-            .then(() => client.$executeRawUnsafe(`PRAGMA busy_timeout=10000;`))
-            .then(() => client.$executeRawUnsafe(`PRAGMA synchronous=NORMAL;`))
-            .then(() => client.$executeRawUnsafe(`PRAGMA cache_size=-16000;`))
+        // All SQLite PRAGMAs return results — must use queryRaw, not executeRaw
+        return client.$queryRawUnsafe(`PRAGMA journal_mode=WAL`)
+            .then(() => client.$queryRawUnsafe(`PRAGMA busy_timeout=10000`))
+            .then(() => client.$queryRawUnsafe(`PRAGMA synchronous=NORMAL`))
+            .then(() => client.$queryRawUnsafe(`PRAGMA cache_size=-16000`))
             .catch(console.error)
     })
 

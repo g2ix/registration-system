@@ -49,6 +49,7 @@ model Member {
   @@index([firstName])
   @@index([lastName])
   @@index([usccmpc_id])
+  @@index([lastName, firstName])
 }
 
 enum MembershipType {
@@ -68,9 +69,13 @@ model Attendance {
   checkout_by_id       String?
   checkout_by          User?            @relation("CheckoutBy", fields: [checkout_by_id], references: [id])
   checkout_number_given Int?
+  claimed_by           String?          // name of person claiming on behalf of member (optional)
+  stub_collected       Boolean          @default(true)  // was the physical stub returned?
   status               AttendanceStatus @default(Correct)
 
   @@index([member_id])
+  @@index([checkin_at])
+  @@index([member_id, checkout_at])
   @@unique([queue_number])   // enforced atomically by SQLite — no two rows share a queue number
 }
 
@@ -81,6 +86,8 @@ enum AttendanceStatus {
 }
 
 model EventConfig {
-  id    Int    @id @default(autoincrement())
-  title String @default("USCC-MPC Event")
+  id              Int     @id @default(autoincrement())
+  title           String  @default("USCC-MPC Event")
+  checkinEnabled  Boolean @default(false)
+  checkoutEnabled Boolean @default(false)
 }

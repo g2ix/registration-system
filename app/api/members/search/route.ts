@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { normalizeForSearch } from '@/lib/normalize'
 
+const MIN_TEXT_SEARCH_LENGTH = 2
+
 export async function GET(req: NextRequest) {
     const raw = req.nextUrl.searchParams.get('q') ?? ''
     if (!raw.trim()) return NextResponse.json([])
 
     const q = raw.trim()
-    const qNorm = normalizeForSearch(q)   // ñ → n, é → e, etc.
     const isNumeric = /^\d+$/.test(q)
+    if (!isNumeric && q.length < MIN_TEXT_SEARCH_LENGTH) return NextResponse.json([])
+
+    const qNorm = normalizeForSearch(q)   // ñ → n, é → e, etc.
     const like = `%${qNorm}%`
 
     // Normalize BOTH sides: REPLACE ñ→n in the stored column AND in the search pattern.

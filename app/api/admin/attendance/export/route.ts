@@ -1,27 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+
+const EXPORT_BATCH_SIZE = 500
 
 export async function GET() {
     const session = await getServerSession(authOptions)
     if ((session?.user as any)?.role !== 'ADMIN')
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const attendance = await prisma.attendance.findMany({
-        include: {
-            member: {
-                select: {
-                    usccmpc_id: true, firstName: true, lastName: true,
-                    middleName: true, suffix: true, membership_type: true,
-                    contactNumber: true, email1: true,
-                },
+    // Fetch in batches to avoid loading everything into memory at once
+    const include = {
+        member: {
+            select: {
+                usccmpc_id: true, firstName: true, lastName: true,
+                middleName: true, suffix: true, membership_type: true,
+                contactNumber: true, email1: true,
             },
-            checkin_by: { select: { username: true } },
-            checkout_by: { select: { username: true } },
         },
-        orderBy: { checkin_at: 'asc' },
-    })
+        checkin_by: { select: { username: true } },
+        checkout_by: { select: { username: true } },
+    }
+    const attendance: Awaited<ReturnType<typeof prisma.attendance.findMany<{ include: typeof include }>>> = []
+    let cursor: string | undefined
+    while (true) {
+        const batch = await prisma.attendance.findMany({
+            take: EXPORT_BATCH_SIZE,
+            ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+            include,
+            orderBy: { checkin_at: 'asc' },
+        })
+        if (batch.length === 0) break
+        attendance.push(...batch)
+        if (batch.length < EXPORT_BATCH_SIZE) break
+        cursor = batch[batch.length - 1].id
+    }
 
     // Return clean rows ready for XLSX/CSV conversion on the client
     const rows = attendance.map(a => ({
@@ -38,6 +52,8 @@ export async function GET() {
         'Check-In By': a.checkin_by.username,
         'Check-Out Time': a.checkout_at ? new Date(a.checkout_at).toLocaleString('en-PH') : '',
         'Check-Out By': a.checkout_by?.username ?? '',
+        'Claimed By': (a as any).claimed_by ?? '',
+        'Stub Collected': a.checkout_at ? ((a as any).stub_collected === false ? 'No' : 'Yes') : '',
         'Queue # at Out': a.checkout_number_given ?? '',
         'Status': a.status,
     }))

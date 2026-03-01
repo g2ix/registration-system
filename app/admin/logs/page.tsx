@@ -7,6 +7,7 @@ import { Loader2, Filter } from 'lucide-react'
 interface LogEntry {
     id: string; queue_number: number; status: string
     checkin_at: string; checkout_at?: string; checkout_number_given?: number
+    claimed_by?: string | null; stub_collected?: boolean
     member: { firstName: string; lastName: string; usccmpc_id: string; membership_type: string }
     checkin_by?: { username: string }; checkout_by?: { username: string }
 }
@@ -57,7 +58,7 @@ export default function LogsPage() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr style={{ background: 'var(--bg-input)', borderBottom: '1px solid var(--border)' }}>
-                                    {['Member', 'USCCMPC ID', 'Type', 'Queue #', 'Status', 'Check-In', 'By (In)', 'Check-Out', 'By (Out)', 'Given #'].map(h => (
+                                    {['Member', 'USCCMPC ID', 'Type', 'Queue #', 'Status', 'Check-In', 'By (In)', 'Check-Out', 'By (Out)', 'Claimed By', 'Stub', 'Given #'].map(h => (
                                         <th key={h} className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -83,6 +84,16 @@ export default function LogsPage() {
                                             <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{l.checkin_by?.username ?? '—'}</td>
                                             <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>{l.checkout_at ? new Date(l.checkout_at).toLocaleTimeString() : '—'}</td>
                                             <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{l.checkout_by?.username ?? '—'}</td>
+                                            <td className="px-4 py-3 text-xs" style={{ color: l.claimed_by ? 'var(--warning)' : 'var(--text-muted)' }}>
+                                                {l.claimed_by ? `👤 ${l.claimed_by}` : '—'}
+                                            </td>
+                                            <td className="px-4 py-3 text-xs">
+                                                {l.checkout_at
+                                                    ? l.stub_collected === false
+                                                        ? <span className="badge badge-lost">Not Returned</span>
+                                                        : <span className="badge badge-correct">Collected</span>
+                                                    : '—'}
+                                            </td>
                                             <td className="px-4 py-3 text-xs font-bold" style={{ color: isMismatch ? '#f87171' : 'var(--text-muted)' }}>
                                                 {l.checkout_number_given != null ? `#${l.checkout_number_given}` : '—'}
                                             </td>

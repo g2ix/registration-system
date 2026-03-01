@@ -10,6 +10,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const config = await prisma.eventConfig.findFirst()
+    if (!config?.checkinEnabled) {
+        return NextResponse.json(
+            { error: 'Check-in / event sign-in is not currently available. Please wait for the admin to activate it.' },
+            { status: 403 }
+        )
+    }
+
     const body = await req.json()
     const { member_id, queue_number } = body
 
@@ -22,16 +30,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid queue number' }, { status: 400 })
     }
 
-    // Check if member is already checked in (open session)
-    const existing = await prisma.attendance.findFirst({
-        where: { member_id, checkout_at: null },
-    })
+    // Run both checks in parallel
+    const [existing, takenBy] = await Promise.all([
+        prisma.attendance.findFirst({ where: { member_id, checkout_at: null } }),
+        prisma.attendance.findFirst({
+            where: { queue_number: qNum },
+            include: { member: { select: { firstName: true, lastName: true } } },
+        }),
+    ])
     if (existing) {
         return NextResponse.json({ error: 'Member is already checked in' }, { status: 409 })
     }
+    if (takenBy) {
+        const name = `${takenBy.member.lastName}, ${takenBy.member.firstName}`
+        return NextResponse.json(
+            { error: `Queue #${qNum} is already assigned to ${name}` },
+            { status: 409 }
+        )
+    }
 
-    // Attempt insert — let the DB's unique constraint on queue_number handle
-    // any concurrent duplicate atomically. No pre-check needed.
+    // Attempt insert — DB unique constraint is the final atomic guard against race conditions
     try {
         const attendance = await prisma.attendance.create({
             data: {
@@ -44,23 +62,15 @@ export async function POST(req: NextRequest) {
             },
         })
         return NextResponse.json(attendance, { status: 201 })
-    } catch (err) {
+    } catch (err: unknown) {
         if (err instanceof PrismaClientKnownRequestError) {
-            // P2002 = unique constraint failed (queue_number already taken)
             if (err.code === 'P2002') {
-                // Look up who holds this number to give a helpful message
-                const holder = await prisma.attendance.findUnique({
-                    where: { queue_number: qNum },
-                    include: { member: { select: { firstName: true, lastName: true } } },
-                }).catch(() => null)
-                const name = holder ? `${holder.member.lastName}, ${holder.member.firstName}` : 'another member'
                 return NextResponse.json(
-                    { error: `Queue #${qNum} is already assigned to ${name}` },
+                    { error: `Queue #${qNum} is already taken` },
                     { status: 409 }
                 )
             }
-            // P2034 = write conflict / transaction conflict under load
-            if (err instanceof PrismaClientKnownRequestError && err.code === 'P2034') {
+            if (err.code === 'P2034') {
                 return NextResponse.json(
                     { error: 'Server busy — please try again' },
                     { status: 503 }

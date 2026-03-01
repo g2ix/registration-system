@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { useTheme } from './ThemeContext'
 import {
-    LayoutDashboard, Users, Upload, ClipboardList, Vote,
+    Users, Upload, ClipboardList, Vote,
     Sun, Moon, Menu, X, ChevronDown, LogOut, Settings,
     Shield, User, BarChart3, UserCheck, DatabaseBackup
 } from 'lucide-react'
@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
     { href: '/admin/users', label: 'User Management', icon: <Shield size={16} />, roles: ['ADMIN'] },
     { href: '/admin/logs', label: 'Audit Log', icon: <ClipboardList size={16} />, roles: ['ADMIN'] },
     { href: '/admin/data', label: 'Data & Backup', icon: <DatabaseBackup size={16} />, roles: ['ADMIN'] },
+    { href: '/admin/settings', label: 'Event Controls', icon: <Settings size={16} />, roles: ['ADMIN'] },
     { href: '/election', label: 'Election Panel', icon: <Vote size={16} />, roles: ['ADMIN', 'ELECTION'] },
 ]
 
