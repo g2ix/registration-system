@@ -2,8 +2,9 @@
 
 import { useState, useRef } from 'react'
 import AppShell from '@/components/AppShell'
-import { Upload, FileText, CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react'
+import { Upload, CheckCircle, Loader2, AlertTriangle, Download } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import { buildMemberUploadTemplate, MEMBER_UPLOAD_TEMPLATE_FILENAME } from '@/lib/memberTemplate'
 
 interface Row { [key: string]: string }
 interface UploadResult { upserted: number; errors: number; errorDetails: string[] }
@@ -35,6 +36,10 @@ export default function UploadPage() {
         e.preventDefault(); setDrag(false)
         const f = e.dataTransfer.files[0]
         if (f) parseFile(f)
+    }
+
+    function downloadTemplate() {
+        XLSX.writeFile(buildMemberUploadTemplate(), MEMBER_UPLOAD_TEMPLATE_FILENAME)
     }
 
     async function handleUpload() {
@@ -77,6 +82,13 @@ export default function UploadPage() {
                         usccmpc_id · firstName · lastName · membership_type (Regular / Associate)
                     </p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Optional: middleName, suffix, email1, email2, contactNumber</p>
+                    <button type="button" className="btn btn-ghost text-xs mt-3" onClick={downloadTemplate}>
+                        <Download size={14} />
+                        Download template
+                    </button>
+                    <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                        The file includes two sample rows. Replace them with real members before uploading.
+                    </p>
                 </div>
 
                 {/* Preview */}

@@ -156,7 +156,7 @@ Stop the server with `Ctrl + C`.
 
 1. Log in as **admin**
 2. Go to **Upload Members** in the sidebar
-3. Upload a `.csv` or `.xlsx` file with these columns:
+3. On that page, choose **Download template**, or upload your own `.csv` or `.xlsx` file with these columns:
 
 | Column | Required | Notes |
 |--------|----------|-------|
