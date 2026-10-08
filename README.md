@@ -2,6 +2,8 @@
 
 An offline, air-gapped attendance and election tracking system for USCCMPC-MPC events — built with Next.js 15, Prisma, and SQLite. Runs fully on a local machine with LAN access, no internet required.
 
+For a fresh clone, starting the app again, and opening the database, see [docs/running.md](docs/running.md).
+
 ---
 
 ## Features
@@ -93,7 +95,7 @@ NEXTAUTH_URL="http://localhost:3000"
 
 ```powershell
 npx prisma db push
-npx prisma db seed
+npm run db:seed
 ```
 
 This creates `prisma/dev.db` and seeds the default accounts:
