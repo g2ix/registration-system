@@ -19,10 +19,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { member_id, queue_number } = body
+    const { member_id, queue_number, raffle_eligible } = body
 
     if (!member_id || queue_number == null) {
         return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    }
+
+    if (typeof raffle_eligible !== 'boolean') {
+        return NextResponse.json({ error: 'Choose normal check-in or raffle check-in' }, { status: 400 })
     }
 
     const qNum = parseInt(queue_number)
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
             data: {
                 member_id,
                 queue_number: qNum,
+                raffle_eligible,
                 checkin_by_id: (session.user as any).id,
             },
             include: {

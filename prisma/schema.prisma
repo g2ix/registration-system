@@ -71,6 +71,7 @@ model Attendance {
   checkout_number_given Int?
   claimed_by           String?          // name of person claiming on behalf of member (optional)
   stub_collected       Boolean          @default(true)  // was the physical stub returned?
+  raffle_eligible      Boolean          @default(false) // checked in for the raffle, not a normal attendance only
   status               AttendanceStatus @default(Correct)
 
   @@index([member_id])

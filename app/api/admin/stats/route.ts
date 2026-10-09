@@ -23,6 +23,7 @@ export async function GET() {
 
     const checkedOutRegular = allAttendances.filter((a: AttWithMember) => !!a.checkout_at && a.member.membership_type === 'Regular').length
     const checkedOutAssociate = allAttendances.filter((a: AttWithMember) => !!a.checkout_at && a.member.membership_type === 'Associate').length
+    const raffleEligible = allAttendances.filter((a: AttWithMember) => a.raffle_eligible).length
 
     return NextResponse.json({
         totalMembers,
@@ -35,5 +36,6 @@ export async function GET() {
         checkedInAssociate,
         checkedOutRegular,
         checkedOutAssociate,
+        raffleEligible,
     })
 }

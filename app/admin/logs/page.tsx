@@ -7,12 +7,12 @@ import { Loader2, Filter } from 'lucide-react'
 interface LogEntry {
     id: string; queue_number: number; status: string
     checkin_at: string; checkout_at?: string; checkout_number_given?: number
-    claimed_by?: string | null; stub_collected?: boolean
+    claimed_by?: string | null; stub_collected?: boolean; raffle_eligible?: boolean
     member: { firstName: string; lastName: string; usccmpc_id: string; membership_type: string }
     checkin_by?: { username: string }; checkout_by?: { username: string }
 }
 
-type FilterType = 'all' | 'lost' | 'mismatch'
+type FilterType = 'all' | 'raffle' | 'lost' | 'mismatch'
 
 export default function LogsPage() {
     const [logs, setLogs] = useState<LogEntry[]>([])
@@ -25,9 +25,11 @@ export default function LogsPage() {
             .then(d => { setLogs(d); setLoading(false) })
     }, [])
 
-    const visible = logs.filter(l =>
-        filter === 'all' || l.status.toLowerCase() === filter
-    )
+    const visible = logs.filter(l => {
+        if (filter === 'all') return true
+        if (filter === 'raffle') return !!l.raffle_eligible
+        return l.status.toLowerCase() === filter
+    })
 
     return (
         <AppShell>
@@ -58,14 +60,14 @@ export default function LogsPage() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr style={{ background: 'var(--bg-input)', borderBottom: '1px solid var(--border)' }}>
-                                    {['Member', 'USCCMPC ID', 'Type', 'Queue #', 'Status', 'Check-In', 'By (In)', 'Check-Out', 'By (Out)', 'Claimed By', 'Stub', 'Given #'].map(h => (
+                                    {['Member', 'USCCMPC ID', 'Type', 'Queue #', 'Check-In Type', 'Status', 'Check-In', 'By (In)', 'Check-Out', 'By (Out)', 'Claimed By', 'Stub', 'Given #'].map(h => (
                                         <th key={h} className="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 {visible.length === 0 && (
-                                    <tr><td colSpan={10} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>No records found.</td></tr>
+                                    <tr><td colSpan={13} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>No records found.</td></tr>
                                 )}
                                 {visible.map(l => {
                                     const isLost = l.status === 'Lost'
@@ -79,6 +81,11 @@ export default function LogsPage() {
                                             <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{l.member.usccmpc_id}</td>
                                             <td className="px-4 py-3"><span className={`badge badge-${l.member.membership_type.toLowerCase()}`}>{l.member.membership_type}</span></td>
                                             <td className="px-4 py-3 font-bold" style={{ color: 'var(--accent)' }}>#{l.queue_number}</td>
+                                            <td className="px-4 py-3">
+                                                {l.raffle_eligible
+                                                    ? <span className="badge badge-raffle">Raffle</span>
+                                                    : <span className="badge badge-checkedin">Normal</span>}
+                                            </td>
                                             <td className="px-4 py-3"><span className={`badge badge-${l.status.toLowerCase()}`}>{l.status}</span></td>
                                             <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>{new Date(l.checkin_at).toLocaleTimeString()}</td>
                                             <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{l.checkin_by?.username ?? '—'}</td>

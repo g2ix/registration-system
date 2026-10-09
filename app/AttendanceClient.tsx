@@ -6,7 +6,7 @@ import AppShell from '@/components/AppShell'
 import {
     Search, CheckCircle, XCircle, AlertTriangle,
     ChevronRight, X, Loader2, Hash, ArrowLeft, RotateCcw,
-    Clock, UserCheck, LogIn, LogOut, Users
+    Clock, UserCheck, LogIn, LogOut, Users, Ticket
 } from 'lucide-react'
 import type { FeedEvent } from '@/lib/attendance'
 
@@ -21,6 +21,7 @@ interface Attendance {
     status: 'Correct' | 'Lost' | 'Mismatch'
     claimed_by?: string | null
     stub_collected?: boolean
+    raffle_eligible?: boolean
     checkin_by?: { username: string }; checkout_by?: { username: string }
 }
 type CheckoutState = 'choosing' | 'correct' | 'mismatch' | 'proxy' | 'lost'
@@ -161,6 +162,7 @@ export default function AttendanceClient({ initialRecent }: { initialRecent: Fee
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         <span className={`badge badge-${m.membership_type.toLowerCase()}`}>{m.membership_type}</span>
                                                         {isIn && <span className="badge badge-checkedin">In</span>}
+                                                        {att?.raffle_eligible && <span className="badge badge-raffle">Raffle</span>}
                                                         {isOut && <span className={`badge badge-${att.status.toLowerCase()}`}>{att.status}</span>}
                                                         <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
                                                     </div>
@@ -261,12 +263,28 @@ function MemberPanel({ member, session, eventConfig, onClose, onRefresh }: {
             )}
             {!attendance && eventConfig.checkinEnabled && <CheckinForm member={member} onSuccess={() => onRefresh(member.id)} />}
             {isCheckedIn && !eventConfig.checkoutEnabled && (
-                <DisabledBlock
-                    icon={<LogOut size={24} />}
-                    title="Check-out is not available"
-                    message="Check-out has not been activated yet. Please wait for the admin to enable checkout in Event Controls."
-                    onClose={onClose}
-                />
+                <div className="space-y-3">
+                    <div className="card p-4 flex items-center justify-between gap-4"
+                        style={{ borderColor: 'rgba(58,140,74,0.3)', background: 'var(--accent-light)' }}>
+                        <div>
+                            <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--text-muted)' }}>CHECKED IN WITH TRAIL #</p>
+                            <p className="text-3xl font-bold" style={{ color: 'var(--accent)' }}>#{attendance.queue_number}</p>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                {new Date(attendance.checkin_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}{attendance.checkin_by && ` · ${attendance.checkin_by.username}`}
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                            <span className="badge badge-checkedin">Present</span>
+                            <CheckinTypeBadge eligible={attendance.raffle_eligible} />
+                        </div>
+                    </div>
+                    <DisabledBlock
+                        icon={<LogOut size={24} />}
+                        title="Check-out is not available"
+                        message="Check-out has not been activated yet. Please wait for the admin to enable checkout in Event Controls."
+                        onClose={onClose}
+                    />
+                </div>
             )}
             {isCheckedIn && eventConfig.checkoutEnabled && <CheckoutForm attendance={attendance} onSuccess={() => onRefresh(member.id)} />}
             {isCheckedOut && (() => {
@@ -315,6 +333,7 @@ function MemberPanel({ member, session, eventConfig, onClose, onRefresh }: {
                             <h3 className="font-semibold text-xs" style={{ color: 'var(--text-muted)' }}>ATTENDANCE RECORD</h3>
                             <div className="grid grid-cols-2 gap-3 text-sm">
                                 <InfoRow label="Queue #" value={`#${attendance.queue_number}`} />
+                                <InfoRow label="Check-in" value={<CheckinTypeBadge eligible={attendance.raffle_eligible} />} />
                                 <InfoRow label="Status" value={<span className={`badge badge-${attendance.status.toLowerCase()}`}>{attendance.status}</span>} />
                                 <InfoRow label="Checked in" value={new Date(attendance.checkin_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} />
                                 <InfoRow label="Checked out" value={new Date(attendance.checkout_at!).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} />
@@ -337,24 +356,40 @@ function MemberPanel({ member, session, eventConfig, onClose, onRefresh }: {
     )
 }
 
+function CheckinTypeBadge({ eligible }: { eligible?: boolean }) {
+    return eligible
+        ? <span className="badge badge-raffle">Raffle</span>
+        : <span className="badge badge-checkedin">Normal</span>
+}
+
 function CheckinForm({ member, onSuccess }: { member: Member; onSuccess: () => void }) {
     const [queueNumber, setQueueNumber] = useState('')
+    const [checkinType, setCheckinType] = useState<'normal' | 'raffle' | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
     useEffect(() => { inputRef.current?.focus() }, [])
 
     async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault(); if (!queueNumber) return
+        e.preventDefault(); if (!queueNumber || !checkinType) return
         setLoading(true); setError('')
         const res = await fetch('/api/attendance/checkin', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ member_id: member.id, queue_number: parseInt(queueNumber) }),
+            body: JSON.stringify({
+                member_id: member.id,
+                queue_number: parseInt(queueNumber),
+                raffle_eligible: checkinType === 'raffle',
+            }),
         })
         setLoading(false)
         if (res.ok) onSuccess()
         else { const d = await res.json(); setError(d.error ?? 'Failed') }
     }
+
+    const typeOptions = [
+        { key: 'normal' as const, icon: <LogIn size={18} style={{ color: 'var(--accent)' }} />, title: 'Normal check-in', desc: 'Attendance only. Not entered in the raffle.' },
+        { key: 'raffle' as const, icon: <Ticket size={18} style={{ color: '#fbbf24' }} />, title: 'Eligible for raffle', desc: 'Checked in and entered in the raffle.' },
+    ]
 
     return (
         <form onSubmit={handleSubmit} className="card p-5 space-y-4 animate-slide-up">
@@ -367,10 +402,34 @@ function CheckinForm({ member, onSuccess }: { member: Member; onSuccess: () => v
                 <input ref={inputRef} className="input text-2xl text-center font-bold tracking-widest" style={{ height: '64px' }}
                     type="number" min="1" placeholder="—" value={queueNumber} onChange={e => setQueueNumber(e.target.value)} required />
             </div>
+            <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>CHECK-IN TYPE</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {typeOptions.map(opt => {
+                        const selected = checkinType === opt.key
+                        return (
+                            <button key={opt.key} type="button" onClick={() => setCheckinType(opt.key)}
+                                className="text-left rounded-xl p-3 transition-all"
+                                style={{
+                                    border: `1px solid ${selected ? (opt.key === 'raffle' ? 'rgba(251,191,36,0.7)' : 'var(--accent)') : 'var(--border)'}`,
+                                    background: selected ? (opt.key === 'raffle' ? 'rgba(251,191,36,0.12)' : 'var(--accent-light)') : 'transparent',
+                                }}>
+                                <div className="flex items-start gap-2">
+                                    <div className="shrink-0 mt-0.5">{opt.icon}</div>
+                                    <div>
+                                        <p className="font-semibold text-sm">{opt.title}</p>
+                                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{opt.desc}</p>
+                                    </div>
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
+            </div>
             {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
-            <button type="submit" className="btn btn-primary w-full" disabled={loading || !queueNumber}>
-                {loading ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />}
-                {loading ? 'Checking in…' : 'Confirm Check-In'}
+            <button type="submit" className="btn btn-primary w-full" disabled={loading || !queueNumber || !checkinType}>
+                {loading ? <Loader2 size={15} className="animate-spin" /> : checkinType === 'raffle' ? <Ticket size={15} /> : <CheckCircle size={15} />}
+                {loading ? 'Checking in…' : checkinType === 'raffle' ? 'Confirm Raffle Check-In' : checkinType === 'normal' ? 'Confirm Normal Check-In' : 'Choose a check-in type'}
             </button>
         </form>
     )
@@ -424,7 +483,10 @@ function CheckoutForm({ attendance, onSuccess }: { attendance: Attendance; onSuc
                     {new Date(attendance.checkin_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}{attendance.checkin_by && ` · ${attendance.checkin_by.username}`}
                 </p>
             </div>
-            <span className="badge badge-checkedin">Present</span>
+            <div className="flex flex-col items-end gap-1">
+                <span className="badge badge-checkedin">Present</span>
+                <CheckinTypeBadge eligible={attendance.raffle_eligible} />
+            </div>
         </div>
     )
 
@@ -682,6 +744,9 @@ function RecentPanel({ items }: { items: FeedEvent[] }) {
                                     <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                         <span className={`badge badge-${item.member.membership_type.toLowerCase()}`}
                                             style={{ fontSize: '9px', padding: '1px 5px' }}>{item.member.membership_type[0]}</span>
+                                        {isIn && item.raffle_eligible && (
+                                            <span className="badge badge-raffle" style={{ fontSize: '9px', padding: '1px 5px' }}>Raffle</span>
+                                        )}
                                         {!isIn && item.status && (
                                             <span className={`badge badge-${item.status.toLowerCase()}`}
                                                 style={{ fontSize: '9px', padding: '1px 5px' }}>{item.status}</span>

@@ -10,6 +10,7 @@ export type FeedEvent = {
     status?: string
     claimed_by?: string | null
     stub_collected?: boolean
+    raffle_eligible?: boolean
 }
 
 export async function getRecentEvents(): Promise<FeedEvent[]> {
@@ -32,6 +33,7 @@ export async function getRecentEvents(): Promise<FeedEvent[]> {
             queue_number: r.queue_number,
             member: r.member,
             by: r.checkin_by,
+            raffle_eligible: r.raffle_eligible,
         })
         if (r.checkout_at) {
             events.push({

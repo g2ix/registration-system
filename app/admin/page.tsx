@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import AppShell from '@/components/AppShell'
 import {
     Users, CheckCircle, TrendingUp, Edit3, Save, X,
-    RefreshCw, Loader2, LogIn, LogOut as LogOutIcon
+    RefreshCw, Loader2, LogIn, LogOut as LogOutIcon, Ticket
 } from 'lucide-react'
 
 interface Stats {
@@ -13,6 +13,7 @@ interface Stats {
     currentlyPresent: number; regularMembers: number; associateMembers: number
     checkedInRegular: number; checkedInAssociate: number
     checkedOutRegular: number; checkedOutAssociate: number
+    raffleEligible: number
 }
 
 export default function AdminDashboard() {
@@ -80,9 +81,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* ── Stats ── */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                 <StatCard label="Total Members" value={stats?.totalMembers ?? '—'} icon={<Users size={20} />} color="#3b82f6" />
                 <StatCard label="Total Checked-In" value={stats?.checkedInTotal ?? '—'} sub={`${checkinPct}% of members`} icon={<LogIn size={20} />} color="#22c55e" />
+                <StatCard label="Raffle Eligible" value={stats?.raffleEligible ?? '—'} sub="checked in for the raffle" icon={<Ticket size={20} />} color="#f59e0b" />
                 <StatCard label="Currently Present" value={stats?.currentlyPresent ?? '—'} sub="checked in, not yet out" icon={<CheckCircle size={20} />} color="#06b6d4" />
                 <StatCard label="Checked Out" value={stats?.checkedOutTotal ?? '—'} sub={`${checkoutPct}% of check-ins`} icon={<LogOutIcon size={20} />} color="#a855f7" />
                 <StatCard label="Not Yet In" value={stats != null ? stats.totalMembers - stats.checkedInTotal : '—'} icon={<TrendingUp size={20} />} color="#f59e0b" />

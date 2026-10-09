@@ -50,6 +50,7 @@ export async function GET() {
         'Email': a.member.email1 ?? '',
         'Check-In Time': new Date(a.checkin_at).toLocaleString('en-PH'),
         'Check-In By': a.checkin_by.username,
+        'Check-In Type': a.raffle_eligible ? 'Raffle' : 'Normal',
         'Check-Out Time': a.checkout_at ? new Date(a.checkout_at).toLocaleString('en-PH') : '',
         'Check-Out By': a.checkout_by?.username ?? '',
         'Claimed By': (a as any).claimed_by ?? '',
