@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const q = url.searchParams.get('q')?.trim() ?? ''
     const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1'))
-    const pageSize = 5
+    const pageSize = 25
     const qNorm = normalizeForSearch(q)  // ñ → n, strip all diacritics
     const like = `%${qNorm}%`
     const offset = (page - 1) * pageSize

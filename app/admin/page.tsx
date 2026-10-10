@@ -17,6 +17,8 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
+    const { data: session } = useSession()
+    const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'ADMIN'
     const [stats, setStats] = useState<Stats | null>(null)
     const [eventTitle, setEventTitle] = useState('')
     const [editingTitle, setEditingTitle] = useState(false)
@@ -53,7 +55,7 @@ export default function AdminDashboard() {
         <AppShell>
             <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
                 <div>
-                    <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+                    <h1 className="text-2xl font-bold">{isAdmin ? 'Admin Dashboard' : 'Dashboard'}</h1>
                     <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Live attendance overview · auto-refreshes every 5 seconds</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -71,7 +73,7 @@ export default function AdminDashboard() {
                     ) : (
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{eventTitle}</span>
-                            <button className="btn btn-ghost py-1.5 px-2 text-xs" onClick={() => setEditingTitle(true)} title="Edit event title"><Edit3 size={12} /></button>
+                            {isAdmin && <button className="btn btn-ghost py-1.5 px-2 text-xs" onClick={() => setEditingTitle(true)} title="Edit event title"><Edit3 size={12} /></button>}
                         </div>
                     )}
                     <button className="btn btn-ghost py-1.5 px-2 text-xs" onClick={() => fetchStats()} title="Refresh">

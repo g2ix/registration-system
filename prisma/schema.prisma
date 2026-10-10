@@ -19,12 +19,14 @@ model User {
 
   checkins  Attendance[] @relation("CheckinBy")
   checkouts Attendance[] @relation("CheckoutBy")
+  raffleDraws RaffleWinner[]
 }
 
 enum Role {
   ADMIN
   STAFF
   ELECTION
+  MANAGER
 }
 
 model Member {
@@ -45,6 +47,7 @@ model Member {
   voted_at        DateTime?
 
   attendance Attendance[]
+  raffleWins RaffleWinner[]
 
   @@index([firstName])
   @@index([lastName])
@@ -84,6 +87,18 @@ enum AttendanceStatus {
   Correct
   Lost
   Mismatch
+}
+
+model RaffleWinner {
+  id          String   @id @default(cuid())
+  member_id   String
+  member      Member   @relation(fields: [member_id], references: [id])
+  drawn_at    DateTime @default(now())
+  drawn_by_id String
+  drawn_by    User     @relation(fields: [drawn_by_id], references: [id])
+
+  @@index([member_id])
+  @@index([drawn_at])
 }
 
 model EventConfig {

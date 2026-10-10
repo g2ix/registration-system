@@ -50,7 +50,7 @@ NEXTAUTH_SECRET="pasteTheGeneratedSecretHere"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-`NEXTAUTH_URL` must match the address you open in the browser. Use `http://localhost:3000` on this machine. If other devices on the network will open the app, set this to `http://<this-machine-ip>:3000` instead.
+`NEXTAUTH_URL` must match the address you type in the browser. Use `http://localhost:3000` when only this computer opens the app. When phones or other computers on the same network will open it, use the steps in [Connect from another device](#connect-from-another-device) and set `NEXTAUTH_URL` to `http://<this-machine-ip>:3000`.
 
 If you change `.env` while the server is already running, stop it with `Ctrl + C` and start it again. Otherwise login can succeed and then send you back to the login page.
 
@@ -67,6 +67,7 @@ npm run db:seed
 |----------|----------|------|
 | `admin` | `admin123` | Admin |
 | `staff` | `staff123` | Staff |
+| `manager` | `manager123` | Manager |
 | `election` | `election123` | Election |
 
 Change these passwords after the first login under **Admin → User Management**.
@@ -81,34 +82,72 @@ Development, with live reload:
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000` on this computer. Stop the server with `Ctrl + C`.
 
-Other devices on the same network can use `http://<this-machine-ip>:3000`. Find that address with:
-
-```powershell
-ipconfig
-```
-
-Look for **IPv4 Address** on the active network adapter.
-
-Stop the server with `Ctrl + C`.
-
-Production, after the app is already built:
+Production, for an event or when other devices will connect:
 
 ```powershell
 npm run build
 npm start
 ```
 
-Use production when the app will stay running for an event. Rebuild with `npm run build` only after the code changes. Day-to-day development can stay on `npm run dev`.
+`npm run dev` and `npm start` both listen on every network address of this computer, so another device can reach the app. Rebuild with `npm run build` only after the code changes. Day-to-day work on this computer alone can stay on `npm run dev`.
 
 If port 3000 is already taken:
 
 ```powershell
-npx next dev -H 0.0.0.0 -p 3001
+npx next dev --turbopack -H 0.0.0.0 -p 3001
 ```
 
-Then open `http://localhost:3001` and set `NEXTAUTH_URL` in `.env` to that same address before starting the server.
+Then open `http://localhost:3001` and set `NEXTAUTH_URL` in `.env` to that same address before starting the server. For a production server on 3001, use `npm run start:3001` after `npm run build`.
+
+## Connect from another device
+
+Phones, laptops, and the projector computer must be on the same Wi-Fi or the same wired network as this PC. Guest Wi-Fi often blocks devices from seeing each other.
+
+### 1. Find this computer’s address
+
+In PowerShell on the computer that runs the app:
+
+```powershell
+ipconfig
+```
+
+Use the **IPv4 Address** on the adapter that is connected (Wi-Fi or Ethernet). It usually looks like `192.168.1.20` or `10.0.0.8`. Ignore `127.0.0.1`.
+
+### 2. Point login at that address
+
+In `.env`, set `NEXTAUTH_URL` to the same address and port, for example:
+
+```env
+NEXTAUTH_URL="http://192.168.1.20:3000"
+```
+
+Use the IPv4 address from step 1. Stop the server with `Ctrl + C`, then start it again. After this change, open the app with that address on every device, including this computer. `http://localhost:3000` will no longer match the login setting.
+
+If Windows gives this PC a new IPv4 address later, update `NEXTAUTH_URL` and restart the server.
+
+### 3. Allow the app through Windows Firewall
+
+The first time another device connects, Windows may ask to allow Node.js on private networks. Choose **Private networks**.
+
+If nothing asks and other devices cannot connect, run PowerShell **as Administrator**:
+
+```powershell
+New-NetFirewallRule -DisplayName "USCCMPC Attendance" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Private
+```
+
+Use port `3001` in that command if the app is running on 3001. The network should be set to **Private** in Windows network settings. A Public network profile blocks this rule.
+
+### 4. Open the app on the other device
+
+Start the server on this computer (`npm start` for an event, or `npm run dev` while you are still changing the app). On the other device, open:
+
+```text
+http://192.168.1.20:3000
+```
+
+Replace that example with the IPv4 address from step 1. Sign in with the same accounts as on this computer. The raffle page, attendance page, and dashboard are the same session data, because they all use this computer’s database.
 
 ## Run it again later
 
@@ -154,4 +193,6 @@ The database file itself is `prisma/dev.db`. It is created on this machine and i
 | Sign-in succeeds, then the page returns to login | Stop the server and start `npm run dev` again so it reloads `.env` |
 | `NEXTAUTH_SECRET` error | Confirm `.env` exists and `NEXTAUTH_SECRET` is filled in |
 | Port 3000 already in use | Stop the other server, or start this one on port 3001 |
+| Another device cannot open the page | Same Wi-Fi or cable, Windows network set to Private, firewall allows port 3000, and the address is `http://<IPv4>:3000` |
+| Another device signs in and returns to login | Set `NEXTAUTH_URL` to `http://<IPv4>:3000`, restart the server, and open that same address |
 | Database is locked | Only one `npm run dev` or `npm start` process should use this database at a time |

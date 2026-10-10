@@ -373,9 +373,167 @@ body {
     color: #60a5fa;
   }
 
+  .badge-manager {
+    background: rgba(251, 191, 36, 0.18);
+    color: #fbbf24;
+  }
+
 }
 
 /* end @layer components */
+
+.raffle-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.75fr);
+  gap: 20px;
+  align-items: stretch;
+  height: calc(100vh - 104px);
+  min-height: 560px;
+}
+
+.raffle-stage {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  padding: 28px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(251, 191, 36, 0.18), transparent 70%),
+    var(--bg-card);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.raffle-window {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.raffle-name {
+  width: 100%;
+  max-height: 100%;
+  margin: 0;
+  font-size: clamp(2.8rem, 6vw, 6.5rem);
+  line-height: 1.05;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.01em;
+  padding: 24px 32px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.raffle-error {
+  min-height: 1.25rem;
+  margin-top: 12px;
+  font-size: 0.875rem;
+  color: #f87171;
+}
+
+.raffle-draw-btn {
+  margin-top: 16px;
+  min-height: 52px;
+  font-size: 1.05rem;
+}
+
+.raffle-board {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.raffle-board-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.raffle-board-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.raffle-window.is-spinning .raffle-name {
+  animation: raffle-flicker 0.12s linear infinite;
+}
+
+.raffle-window.is-winner {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(251, 191, 36, 0.7);
+}
+
+.raffle-window.is-winner .raffle-name {
+  animation: raffle-pop 0.45s ease;
+  color: #fbbf24;
+}
+
+.raffle-winner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.raffle-winner.is-new {
+  animation: raffle-pop 0.45s ease;
+  border-color: rgba(251, 191, 36, 0.7);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.raffle-place {
+  font-weight: 800;
+  color: #fbbf24;
+  min-width: 2rem;
+}
+
+@keyframes raffle-flicker {
+  50% { opacity: 0.45; transform: translateY(2px); }
+}
+
+@keyframes raffle-pop {
+  0% { transform: scale(0.92); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .raffle-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .raffle-stage,
+  .raffle-board {
+    height: auto;
+  }
+
+  .raffle-window {
+    height: 46vh;
+    min-height: 280px;
+    flex: none;
+  }
+
+  .raffle-board-list {
+    max-height: 280px;
+  }
+}
 
 /* ─── App Shell Layout ─────────────────────────────────────── */
 .app-layout {
@@ -440,6 +598,10 @@ body {
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+}
+
+.app-content-wide {
+  max-width: none;
 }
 
 /* Sidebar nav link */

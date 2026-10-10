@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { useTheme } from './ThemeContext'
 import {
-    Users, Upload, ClipboardList, Vote,
+    Users, Upload, ClipboardList, Vote, Ticket,
     Sun, Moon, Menu, X, ChevronDown, LogOut, Settings,
     Shield, User, BarChart3, UserCheck, DatabaseBackup
 } from 'lucide-react'
@@ -18,7 +18,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
     { href: '/', label: 'Attendance', icon: <Users size={16} />, roles: ['ADMIN', 'STAFF', 'ELECTION'] },
-    { href: '/admin', label: 'Dashboard', icon: <BarChart3 size={16} />, roles: ['ADMIN'] },
+    { href: '/admin', label: 'Dashboard', icon: <BarChart3 size={16} />, roles: ['ADMIN', 'MANAGER'] },
+    { href: '/raffle', label: 'Raffle', icon: <Ticket size={16} />, roles: ['ADMIN', 'MANAGER'] },
     { href: '/admin/upload', label: 'Upload Members', icon: <Upload size={16} />, roles: ['ADMIN'] },
     { href: '/admin/members', label: 'Member Management', icon: <UserCheck size={16} />, roles: ['ADMIN'] },
     { href: '/admin/users', label: 'User Management', icon: <Shield size={16} />, roles: ['ADMIN'] },
@@ -32,9 +33,10 @@ const ROLE_BADGE: Record<string, string> = {
     ADMIN: 'badge-admin',
     STAFF: 'badge-staff',
     ELECTION: 'badge-election',
+    MANAGER: 'badge-manager',
 }
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
     const { data: session } = useSession()
     const pathname = usePathname()
     const { theme, toggle } = useTheme()
@@ -128,6 +130,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                 {role === 'ADMIN' && <Shield size={10} />}
                                 {role === 'ELECTION' && <Vote size={10} />}
                                 {role === 'STAFF' && <User size={10} />}
+                                {role === 'MANAGER' && <Ticket size={10} />}
                                 {role}
                             </span>
                             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{username}</span>
@@ -154,7 +157,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 </header>
 
                 {/* Page content */}
-                <div className="app-content animate-fade-in">
+                <div className={`app-content animate-fade-in${wide ? ' app-content-wide' : ''}`}>
                     {children}
                 </div>
             </div>

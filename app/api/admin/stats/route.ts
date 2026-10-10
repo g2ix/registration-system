@@ -2,28 +2,31 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-    const [totalMembers, regularMembers, associateMembers, allAttendances] =
-        await Promise.all([
-            prisma.member.count(),
-            prisma.member.count({ where: { membership_type: 'Regular' } }),
-            prisma.member.count({ where: { membership_type: 'Associate' } }),
-            prisma.attendance.findMany({
-                include: { member: { select: { membership_type: true } } },
-            }),
-        ])
+    const [
+        totalMembers,
+        regularMembers,
+        associateMembers,
+        checkedInTotal,
+        checkedOutTotal,
+        raffleEligible,
+        checkedInRegular,
+        checkedInAssociate,
+        checkedOutRegular,
+        checkedOutAssociate,
+    ] = await Promise.all([
+        prisma.member.count(),
+        prisma.member.count({ where: { membership_type: 'Regular' } }),
+        prisma.member.count({ where: { membership_type: 'Associate' } }),
+        prisma.attendance.count(),
+        prisma.attendance.count({ where: { checkout_at: { not: null } } }),
+        prisma.attendance.count({ where: { raffle_eligible: true } }),
+        prisma.attendance.count({ where: { member: { membership_type: 'Regular' } } }),
+        prisma.attendance.count({ where: { member: { membership_type: 'Associate' } } }),
+        prisma.attendance.count({ where: { checkout_at: { not: null }, member: { membership_type: 'Regular' } } }),
+        prisma.attendance.count({ where: { checkout_at: { not: null }, member: { membership_type: 'Associate' } } }),
+    ])
 
-    // Everyone who ever checked in (regardless of checkout)
-    type AttWithMember = typeof allAttendances[number]
-    const checkedInTotal = allAttendances.length
-    const checkedOutTotal = allAttendances.filter((a: AttWithMember) => !!a.checkout_at).length
     const currentlyPresent = checkedInTotal - checkedOutTotal
-
-    const checkedInRegular = allAttendances.filter((a: AttWithMember) => a.member.membership_type === 'Regular').length
-    const checkedInAssociate = allAttendances.filter((a: AttWithMember) => a.member.membership_type === 'Associate').length
-
-    const checkedOutRegular = allAttendances.filter((a: AttWithMember) => !!a.checkout_at && a.member.membership_type === 'Regular').length
-    const checkedOutAssociate = allAttendances.filter((a: AttWithMember) => !!a.checkout_at && a.member.membership_type === 'Associate').length
-    const raffleEligible = allAttendances.filter((a: AttWithMember) => a.raffle_eligible).length
 
     return NextResponse.json({
         totalMembers,

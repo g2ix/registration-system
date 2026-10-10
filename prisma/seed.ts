@@ -22,6 +22,14 @@ async function main() {
         create: { username: 'staff', password: staffPassword, role: 'STAFF' },
     })
 
+    // Manager
+    const managerPassword = await bcrypt.hash('manager123', 12)
+    await prisma.user.upsert({
+        where: { username: 'manager' },
+        update: {},
+        create: { username: 'manager', password: managerPassword, role: 'MANAGER' },
+    })
+
     // Election
     const electionPassword = await bcrypt.hash('election123', 12)
     await prisma.user.upsert({
@@ -40,6 +48,7 @@ async function main() {
     console.log('✅ Seed complete!')
     console.log('   Admin:    admin / admin123')
     console.log('   Staff:    staff / staff123')
+    console.log('   Manager:  manager / manager123')
     console.log('   Election: election / election123')
     console.log('   ⚠️  Change these passwords after first login!')
 }

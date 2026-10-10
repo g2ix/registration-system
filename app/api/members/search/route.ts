@@ -22,14 +22,11 @@ export async function GET(req: NextRequest) {
     let matchingRows: IdRow[]
 
     if (isNumeric) {
+        // Queue numbers are unique, so this uses the index instead of scanning every member.
         matchingRows = await prisma.$queryRaw<IdRow[]>`
-            SELECT DISTINCT m.id FROM "Member" m
-            LEFT JOIN "Attendance" a ON a.member_id = m.id
-            WHERE
-                LOWER(REPLACE(REPLACE(m.firstName, 'ñ', 'n'), 'Ñ', 'n')) LIKE LOWER(${like})
-             OR LOWER(REPLACE(REPLACE(m.lastName,  'ñ', 'n'), 'Ñ', 'n')) LIKE LOWER(${like})
-             OR a.queue_number = ${parseInt(q)}
-            ORDER BY m.lastName, m.firstName
+            SELECT m.id FROM "Member" m
+            INNER JOIN "Attendance" a ON a.member_id = m.id
+            WHERE a.queue_number = ${parseInt(q)}
             LIMIT 20
         `
     } else {

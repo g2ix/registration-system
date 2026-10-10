@@ -5,19 +5,20 @@ import AppShell from '@/components/AppShell'
 import { useSession } from 'next-auth/react'
 import {
     Users, Plus, Edit3, Trash2, Save, X, Loader2,
-    Shield, User, Vote, Eye, EyeOff, RefreshCw, KeyRound
+    Shield, User, Vote, Ticket, Eye, EyeOff, RefreshCw, KeyRound
 } from 'lucide-react'
 
 interface SystemUser {
-    id: string; username: string; role: 'ADMIN' | 'STAFF' | 'ELECTION'
+    id: string; username: string; role: 'ADMIN' | 'STAFF' | 'ELECTION' | 'MANAGER'
     createdAt: string; _count: { checkins: number; checkouts: number }
 }
 
-const ROLES = ['ADMIN', 'STAFF', 'ELECTION'] as const
+const ROLES = ['ADMIN', 'STAFF', 'ELECTION', 'MANAGER'] as const
 const ROLE_ICONS: Record<string, React.ReactNode> = {
     ADMIN: <Shield size={12} />,
     STAFF: <User size={12} />,
     ELECTION: <Vote size={12} />,
+    MANAGER: <Ticket size={12} />,
 }
 
 const emptyForm = { username: '', password: '', role: 'STAFF' as typeof ROLES[number] }

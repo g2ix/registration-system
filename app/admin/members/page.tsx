@@ -21,6 +21,7 @@ export default function MembersPage() {
     const [members, setMembers] = useState<Member[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
@@ -32,7 +33,15 @@ export default function MembersPage() {
     const [error, setError] = useState('')
     const [confirmDelete, setConfirmDelete] = useState<Member | null>(null)
 
-    const fetchMembers = useCallback(async (q = search, p = page) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search.trim())
+            setPage(1)
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [search])
+
+    const fetchMembers = useCallback(async (q = debouncedSearch, p = page) => {
         setLoading(true)
         const res = await fetch(`/api/admin/members?q=${encodeURIComponent(q)}&page=${p}`)
         if (res.ok) {
@@ -43,9 +52,9 @@ export default function MembersPage() {
             setPage(data.page)
         }
         setLoading(false)
-    }, [search, page])
+    }, [debouncedSearch, page])
 
-    useEffect(() => { fetchMembers(search, page) }, [search, page])  // eslint-disable-line
+    useEffect(() => { fetchMembers(debouncedSearch, page) }, [debouncedSearch, page])  // eslint-disable-line
 
     function f(key: keyof typeof emptyForm, val: string) { setForm(p => ({ ...p, [key]: val })) }
 
@@ -135,7 +144,7 @@ export default function MembersPage() {
                 <div className="relative mb-4">
                     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
                     <input className="input pl-9 text-sm" placeholder="Search name or USCCMPC ID…"
-                        value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
+                        value={search} onChange={e => setSearch(e.target.value)} />
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
@@ -146,7 +155,7 @@ export default function MembersPage() {
 
 
                 {/* Table */}
-                {loading ? (
+                {loading && members.length === 0 ? (
                     <div className="flex justify-center py-20" style={{ color: 'var(--text-muted)' }}><Loader2 className="animate-spin mr-2" /> Loading…</div>
                 ) : (
                     <div className="card overflow-hidden">

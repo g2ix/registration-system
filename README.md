@@ -104,6 +104,7 @@ This creates `prisma/dev.db` and seeds the default accounts:
 |----------|----------|------|
 | `admin` | `admin123` | Admin |
 | `staff` | `staff123` | Staff |
+| `manager` | `manager123` | Manager |
 | `election` | `election123` | Election |
 
 > ⚠️ Change passwords after first login via **Admin → User Management**.
@@ -129,7 +130,9 @@ npm start
 | Access | URL |
 |--------|-----|
 | This machine | `http://localhost:3000` |
-| LAN (other devices) | `http://<your-ip>:3000` |
+| Other devices on the same network | `http://<your-ip>:3000` |
+
+The server already accepts connections from the network. To sign in from a phone or another computer, set `NEXTAUTH_URL` in `.env` to `http://<your-ip>:3000`, restart the server, allow TCP port 3000 on private networks, and open that same address on each device. Full steps are in [docs/running.md](docs/running.md#connect-from-another-device).
 
 **Find your IP:**
 ```powershell
@@ -180,6 +183,7 @@ Stop the server with `Ctrl + C`.
 |------|--------|
 | **Admin** | Full access — dashboard, member/user management, backup, logs |
 | **Staff** | Attendance page only — check-in and check-out |
+| **Manager** | Dashboard and raffle draw only |
 | **Election** | Election panel — view checked-in Regular members, mark as voted, export |
 
 ---
